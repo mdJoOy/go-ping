@@ -1,3 +1,9 @@
 #!/bin/bash
-
-go build -o build/goping cmd/*
+if [ -d "build" ]
+then 
+    go build -o build/goping cmd/*
+else
+    echo "creating a build direcotry..."
+    mkdir build
+    go build -o build/goping cmd/*
+fi
