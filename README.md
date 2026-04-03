@@ -1,2 +1,2 @@
 # Goping
-Just creating now ready yet
+Just creating, not ready yet
