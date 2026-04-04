@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
+
 	//	"time"
 
 	"golang.org/x/net/icmp"
@@ -13,6 +15,7 @@ import (
 )
 
 func ping(ip net.IP, cf *Config) {
+	stat := &Stats{}
 	var (
 		network     string
 		listener    string
@@ -38,8 +41,21 @@ func ping(ip net.IP, cf *Config) {
 	}
 	defer c.Close()
 
+	//setting up ttl
+	if !cf.ipv6 {
+		if err := c.IPv4PacketConn().SetTTL(cf.ttl); err != nil {
+			fmt.Errorf("couldn't set ttl: %w", err)
+		}
+
+	} else {
+		if err := c.IPv6PacketConn().SetHopLimit(cf.ttl); err != nil {
+			fmt.Errorf("couldn't set ttl: %w", err)
+		}
+
+	}
+
 	//body for icmp echo request, which contains id, seq number or data in raw bytes
-	echoRequestBody := &icmp.Echo{ID: os.Getpid() & 0xffff, Seq: 1, Data: makeBody(56)}
+	echoRequestBody := &icmp.Echo{ID: os.Getpid() & 0xffff, Seq: 1, Data: makeBody(cf.size)}
 	icmpEchoMsg := icmp.Message{Type: icmpMsgType, Code: 0, Body: echoRequestBody}
 
 	//marshaling the body
@@ -52,27 +68,37 @@ func ping(ip net.IP, cf *Config) {
 	//	c.SetWriteDeadline(time.Now().Add(3 * time.Second))
 	//send the echo msg
 	dst := &net.IPAddr{IP: ip}
-	if _, err := c.WriteTo(icmpEchoMsgInBytes, dst); err != nil {
-		fmt.Println(err)
-		log.Fatalf("write failed:%w\n", err)
+	for seq := 0; cf.count == 0 || seq < cf.count; seq++ {
+
+		timeNow := time.Now()
+		if _, err := c.WriteTo(icmpEchoMsgInBytes, dst); err != nil {
+			fmt.Println(err)
+			log.Fatalf("write failed:%w\n", err)
+
+		}
+		//reading the request
+		rb := make([]byte, 1500)
+		n, peer, err := c.ReadFrom(rb)
+		fmt.Println(n, peer, err)
+		if err != nil {
+			log.Fatalf("couldnot read the echo reply message: %w\n", err)
+		}
+		stat.rtt = int(time.Second * time.Since(timeNow))
+		rm, err := icmp.ParseMessage(protocol, rb[:n])
+		if err != nil {
+			fmt.Println("error while parsing the icmp request msg")
+			log.Fatal(err)
+		}
+		stat.sent++
+		stat.received++
+		stat.loss = (stat.sent - stat.received) / stat.sent * 100
+		switch rm.Type {
+		case ipv4.ICMPTypeEchoReply, ipv6.ICMPTypeEchoReply:
+			fmt.Printf("refelection from %v icmp_seq=%d ttl=%d time=%v ms\n", cf.destination, seq, cf.ttl, stat.rtt*1000)
+		default:
+			fmt.Printf("expected %v but got %v\n", ipv6.ICMPTypeEchoReply, rm.Type)
+		}
 
 	}
-	//reading the request
-	rb := make([]byte, 1500)
-	n, peer, err := c.ReadFrom(rb)
-	fmt.Println(n, peer, err)
-	if err != nil {
-		log.Fatalf("couldnot read the echo reply message: %w\n", err)
-	}
-	rm, err := icmp.ParseMessage(protocol, rb[:n])
-	if err != nil {
-		fmt.Println("error while parsing the icmp request msg")
-		log.Fatal(err)
-	}
-	switch rm.Type {
-	case ipv4.ICMPTypeEchoReply, ipv6.ICMPTypeEchoReply:
-		fmt.Printf("refelection from %v\n", peer)
-	default:
-		fmt.Printf("expected %v but got %v\n", ipv6.ICMPTypeEchoReply, rm.Type)
-	}
+	fmt.Printf("sent %d packets, received %d packets, packet loss=%d%%\n", stat.sent, stat.received, stat.loss)
 }
