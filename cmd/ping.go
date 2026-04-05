@@ -61,23 +61,25 @@ func ping(ip net.IP, cf *Config) {
 
 	dst := &net.IPAddr{IP: ip}
 
+	fmt.Printf("PING %s (%s): %d bytes of data\n", cf.destination, ip, cf.size)
+
+	//handling os termination like CTRL + C
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
+	done := make(chan struct{})
+	go func() {
+		select {
+		case <-sigCh:
+		case <-done:
+			return
+		}
+		printStats(*stat, *cf)
+		os.Exit(0)
+
+	}()
+
 	for seq := 0; cf.count == 0 || seq < cf.count; seq++ {
-
-		//handling os termination like CTRL + C
-		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-
-		done := make(chan struct{})
-		go func() {
-			select {
-			case <-sigCh:
-			case <-done:
-				return
-			}
-			printStats(*stat, *cf)
-			os.Exit(0)
-
-		}()
 		echoRequestBody := &icmp.Echo{ID: id, Seq: seq, Data: payload}
 		icmpEchoMsg := icmp.Message{Type: icmpMsgType, Code: 0, Body: echoRequestBody}
 
@@ -90,7 +92,6 @@ func ping(ip net.IP, cf *Config) {
 
 		//	c.SetWriteDeadline(time.Now().Add(3 * time.Second))
 		//send the echo msg
-
 		timeNow := time.Now()
 		if _, err := c.WriteTo(icmpEchoMsgInBytes, dst); err != nil {
 			fmt.Println(err)
