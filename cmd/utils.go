@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
 )
 
-// echo body creator functin
-func makeBody(size int) []byte {
+// echo payload creator functin
+func makePayload(size int) []byte {
 	b := make([]byte, size)
 	for i := range b {
 		b[i] = byte(i & 0xff)
@@ -14,10 +15,11 @@ func makeBody(size int) []byte {
 	return b
 }
 
+// host resolver func
 func resolveHostIP(host string, v6 bool) (net.IP, error) {
 	addrs, err := net.LookupHost(host)
 	if err != nil {
-		fmt.Errorf("couldnot resolve host: %w\n", err)
+		fmt.Fprintf(os.Stderr, "couldnot resolve host: %v\n", err)
 	}
 	for _, addr := range addrs {
 		ipAddr := net.ParseIP(addr)
@@ -29,4 +31,14 @@ func resolveHostIP(host string, v6 bool) (net.IP, error) {
 
 	}
 	return net.ParseIP(addrs[0]), nil
+}
+
+// print stats func
+// --- google.com ping statistics ---
+// 20 packets transmitted, 20 received, 0% packet loss, time 19030ms
+// rtt min/avg/max/mdev = 4.120/10.022/31.023/7.191 ms
+func printStats(s Stats, c Config) {
+	fmt.Printf("--- %s ping statistics ---\n", c.destination)
+	fmt.Printf("%d packets transmitted, %d received, %.2f%% packet loss, time ms\n", s.sent, s.received, s.loss)
+	fmt.Printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n", s.minRtt, s.maxRtt, s.avgRtt, s.stdDev())
 }

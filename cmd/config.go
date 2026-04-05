@@ -9,6 +9,8 @@ type Config struct {
 	ttl         int
 	size        int
 	flood       bool
-	deadLine    time.Duration
+	quit        bool
 	interval    time.Duration
+	timeout     time.Duration
+	deadLine    time.Duration
 }

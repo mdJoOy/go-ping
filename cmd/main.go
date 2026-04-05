@@ -45,13 +45,10 @@ Options:
 		fmt.Print(usages)
 		os.Exit(1)
 	}
-	fmt.Println(config)
 
 	config.destination = flag.Arg(0)
-	fmt.Println(config.ipv6)
 
 	ip, err := resolveHostIP(config.destination, config.ipv6)
-	fmt.Println(ip)
 	if err != nil {
 		log.Fatal("couldnot resolve ip address")
 	}
