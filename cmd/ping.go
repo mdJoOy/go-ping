@@ -59,25 +59,25 @@ func ping(ip net.IP, cf *Config) {
 	id := os.Getpid() & 0xffff
 	payload := makePayload(cf.size)
 
-	//handling os termination like CTRL + C
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-
-	done := make(chan struct{})
-	go func() {
-		select {
-		case <-sigCh:
-		case <-done:
-			return
-		}
-		printStats(*stat, *cf)
-
-	}()
-
 	dst := &net.IPAddr{IP: ip}
 
 	for seq := 0; cf.count == 0 || seq < cf.count; seq++ {
 
+		//handling os termination like CTRL + C
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
+		done := make(chan struct{})
+		go func() {
+			select {
+			case <-sigCh:
+			case <-done:
+				return
+			}
+			printStats(*stat, *cf)
+			os.Exit(0)
+
+		}()
 		echoRequestBody := &icmp.Echo{ID: id, Seq: seq, Data: payload}
 		icmpEchoMsg := icmp.Message{Type: icmpMsgType, Code: 0, Body: echoRequestBody}
 
