@@ -9,7 +9,7 @@ type Config struct {
 	ttl         int
 	size        int
 	flood       bool
-	quit        bool
+	quiet       bool
 	interval    time.Duration
 	timeout     time.Duration
 	deadLine    time.Duration

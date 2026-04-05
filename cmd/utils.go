@@ -42,3 +42,12 @@ func printStats(s Stats, c Config) {
 	fmt.Printf("%d packets transmitted, %d received, %.2f%% packet loss, time ms\n", s.sent, s.received, s.loss)
 	fmt.Printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n", s.minRtt, s.maxRtt, s.avgRtt, s.stdDev())
 }
+
+// repeat func as helper func for the histrogram
+func repeat(ch byte, rc int) string {
+	b := make([]byte, rc)
+	for i := range b {
+		b[i] = ch
+	}
+	return string(b)
+}
