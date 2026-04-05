@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 const (
@@ -21,6 +22,7 @@ func main() {
 	//ttl, size, deadline, interval
 	flag.IntVar(&config.ttl, "t", 64, "define time to live")
 	flag.IntVar(&config.size, "s", 56, "use <size> as number of data bytes to send")
+	flag.DurationVar(&config.interval, "i", time.Second, "seconds between sending each packet")
 
 	// flag.IntVar(&config.interval, "i", timetime.Second, "seconds between sending each packet")
 	var usages string = `Usage

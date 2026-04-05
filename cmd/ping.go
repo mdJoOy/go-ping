@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	//	"time"
@@ -53,15 +55,30 @@ func ping(ip net.IP, cf *Config) {
 		}
 
 	}
-
 	//body for icmp echo request, which contains id, seq number or data in raw bytes
 	id := os.Getpid() & 0xffff
 	payload := makePayload(cf.size)
 
+	//handling os termination like CTRL + C
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
+	done := make(chan struct{})
+	go func() {
+		select {
+		case <-sigCh:
+		case <-done:
+			return
+		}
+		printStats(*stat, *cf)
+
+	}()
+
 	dst := &net.IPAddr{IP: ip}
 
 	for seq := 0; cf.count == 0 || seq < cf.count; seq++ {
-		echoRequestBody := &icmp.Echo{ID: id, Seq: 1, Data: payload}
+
+		echoRequestBody := &icmp.Echo{ID: id, Seq: seq, Data: payload}
 		icmpEchoMsg := icmp.Message{Type: icmpMsgType, Code: 0, Body: echoRequestBody}
 
 		//marshaling the body
@@ -102,6 +119,7 @@ func ping(ip net.IP, cf *Config) {
 		if rmBody.ID != id {
 			continue
 		}
+		time.Sleep(cf.interval)
 		switch rm.Type {
 		case ipv4.ICMPTypeEchoReply, ipv6.ICMPTypeEchoReply:
 			fmt.Printf("refelection from %v(%s) icmp_seq=%d ttl=%d time=%v ms\n", cf.destination, peer, seq, cf.ttl, rtt)
@@ -109,7 +127,12 @@ func ping(ip net.IP, cf *Config) {
 			fmt.Printf("expected %v but got %v\n", ipv6.ICMPTypeEchoReply, rm.Type)
 		}
 
+		if cf.count != 0 && seq+1 >= cf.count {
+			close(done)
+			break
+		}
 	}
 	stat.loss = float64((stat.sent - stat.received) / stat.sent * 100)
 	printStats(*stat, *cf)
+
 }
