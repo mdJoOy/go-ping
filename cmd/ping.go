@@ -115,17 +115,19 @@ func ping(ip net.IP, cf *Config) {
 		}
 
 		rtt := time.Since(timeNow).Seconds() * 1000
+		time.Sleep(cf.interval)
 		stat.add(rtt)
 		rmBody := rm.Body.(*icmp.Echo)
 		if rmBody.ID != id {
 			continue
 		}
-		time.Sleep(cf.interval)
 		switch rm.Type {
 		case ipv4.ICMPTypeEchoReply, ipv6.ICMPTypeEchoReply:
-			fmt.Printf("refelection from %v(%s) icmp_seq=%d ttl=%d time=%v ms\n", cf.destination, peer, seq, cf.ttl, rtt)
-		default:
-			fmt.Printf("expected %v but got %v\n", ipv6.ICMPTypeEchoReply, rm.Type)
+			fmt.Printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%v ms\n", cf.size, peer, seq, cf.ttl, rtt)
+		case ipv4.ICMPTypeDestinationUnreachable, ipv6.ICMPTypeDestinationUnreachable:
+			fmt.Printf("Destination: %s UNREACHABLE\n", peer)
+		case ipv4.ICMPTypeTimeExceeded, ipv6.ICMPTypeTimeExceeded:
+			fmt.Printf("Reply time out\n")
 		}
 
 		if cf.count != 0 && seq+1 >= cf.count {
