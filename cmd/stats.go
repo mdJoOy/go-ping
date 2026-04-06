@@ -53,7 +53,10 @@ func (s *Stats) stdDev() float64 {
 }
 
 func (s *Stats) histogram() {
-
+	if len(s.rtts) == 0 {
+		fmt.Printf("Not enough rtts to draw a histrogram\n")
+		return
+	}
 	min := s.minRtt
 	max := s.maxRtt
 	if min == max {
@@ -73,12 +76,20 @@ func (s *Stats) histogram() {
 		}
 		counts[idx]++
 	}
-
+	maxCount := 0
+	for _, v := range counts {
+		if v > maxCount {
+			maxCount = v
+		}
+	}
+	fmt.Println("max count:", maxCount)
 	fmt.Printf("\n--- Latency Histogram ---\n")
 	for i, v := range counts {
 		low := min + float64(i)*bucketWidth
 		high := low + bucketWidth
-		bar := (v / bucket) * 40
-		fmt.Printf("%6.2f - %6.2f ms | %-*s %d\n", low, high, 40, repeat('#', bar), v)
+		fmt.Println("value of current count:", v)
+		bar := float64(v) / float64(maxCount) * 40
+		fmt.Println("bar:", bar)
+		fmt.Printf("%6.2f - %6.2f ms | %-*s %d\n", low, high, 40, repeat('#', int(bar)), v)
 	}
 }
