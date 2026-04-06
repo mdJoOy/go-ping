@@ -56,6 +56,10 @@ func (s *Stats) histogram() {
 
 	min := s.minRtt
 	max := s.maxRtt
+	if min == max {
+		fmt.Printf("ALL rtts in the same range so, no histrogram necessary\n")
+		return
+	}
 
 	bucket := 10
 	bucketWidth := (max - min) / float64(bucket)
