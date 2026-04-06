@@ -82,14 +82,11 @@ func (s *Stats) histogram() {
 			maxCount = v
 		}
 	}
-	fmt.Println("max count:", maxCount)
 	fmt.Printf("\n--- Latency Histogram ---\n")
 	for i, v := range counts {
 		low := min + float64(i)*bucketWidth
 		high := low + bucketWidth
-		fmt.Println("value of current count:", v)
 		bar := float64(v) / float64(maxCount) * 40
-		fmt.Println("bar:", bar)
 		fmt.Printf("%6.2f - %6.2f ms | %-*s %d\n", low, high, 40, repeat('#', int(bar)), v)
 	}
 }

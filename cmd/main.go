@@ -14,7 +14,6 @@ const (
 )
 
 func main() {
-	fmt.Println(repeat('#', 40))
 	config := &Config{}
 
 	flag.IntVar(&config.count, "c", 0, "stop after <count> replies")
