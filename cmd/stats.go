@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"time"
 )
@@ -49,4 +50,31 @@ func (s *Stats) stdDev() float64 {
 		variance += diff * diff
 	}
 	return math.Sqrt(variance / float64(s.received))
+}
+
+func (s *Stats) histogram() {
+
+	min := s.minRtt
+	max := s.maxRtt
+
+	bucket := 10
+	bucketWidth := (max - min) / float64(bucket)
+
+	counts := make([]int, bucket)
+	for _, v := range s.rtts {
+		idx := int((v - min) / bucketWidth)
+
+		if idx >= bucket {
+			idx = bucket - 1
+		}
+		counts[idx]++
+	}
+
+	fmt.Printf("\n--- Latency Histogram ---\n")
+	for i, v := range counts {
+		low := min + float64(i)*bucketWidth
+		high := low + bucketWidth
+		bar := (v / bucket) * 40
+		fmt.Printf("%6.2f - %6.2f ms | %-*s %d\n", low, high, 40, repeat('#', bar), v)
+	}
 }

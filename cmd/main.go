@@ -20,6 +20,7 @@ func main() {
 	flag.BoolVar(&config.ipv6, "6", false, "use Ipv6")
 	flag.BoolVar(&config.flood, "f", false, "flood ping")
 	flag.BoolVar(&config.quiet, "q", false, "Quiet — only print final summary")
+	flag.BoolVar(&config.histogram, "H", false, "Show ASCII latency histogram after summary")
 	//ttl, size, deadline, interval
 	flag.IntVar(&config.ttl, "t", 64, "define time to live")
 	flag.IntVar(&config.size, "s", 56, "use <size> as number of data bytes to send")

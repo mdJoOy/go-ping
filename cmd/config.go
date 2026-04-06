@@ -10,6 +10,7 @@ type Config struct {
 	size        int
 	flood       bool
 	quiet       bool
+	histogram   bool
 	interval    time.Duration
 	timeout     time.Duration
 	deadLine    time.Duration
