@@ -91,10 +91,7 @@ func ping(ip net.IP, cf *Config) {
 		if err != nil {
 			log.Fatalf("could not marshal the icmp echo req, %w\n", err)
 		}
-		//setting deadline
 
-		//	c.SetWriteDeadline(time.Now().Add(3 * time.Second))
-		//send the echo msg
 		timeNow := time.Now()
 		if _, err := c.WriteTo(icmpEchoMsgInBytes, dst); err != nil {
 			fmt.Println(err)
@@ -103,6 +100,7 @@ func ping(ip net.IP, cf *Config) {
 			continue
 		}
 		//reading the request
+		c.SetReadDeadline(time.Now().Add(cf.timeout))
 		rb := make([]byte, 1500)
 		n, peer, err := c.ReadFrom(rb)
 		if err != nil {
@@ -118,7 +116,9 @@ func ping(ip net.IP, cf *Config) {
 		}
 
 		rtt := time.Since(timeNow).Seconds() * 1000
-		time.Sleep(cf.interval)
+		if !cf.flood {
+			time.Sleep(cf.interval)
+		}
 		stat.add(rtt)
 		rmBody := rm.Body.(*icmp.Echo)
 		if rmBody.ID != id {
@@ -138,6 +138,12 @@ func ping(ip net.IP, cf *Config) {
 		if cf.count != 0 && seq+1 >= cf.count {
 			close(done)
 			break
+		}
+
+		if time.Since(timeNow) == cf.deadLine {
+			fmt.Fprintf(os.Stderr, "Dead-Line crossed")
+			printStats(*stat, *cf)
+			os.Exit(1)
 		}
 	}
 	stat.loss = float64((stat.sent - stat.received) / stat.sent * 100)

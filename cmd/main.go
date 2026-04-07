@@ -25,6 +25,8 @@ func main() {
 	flag.IntVar(&config.ttl, "t", 64, "define time to live")
 	flag.IntVar(&config.size, "s", 56, "use <size> as number of data bytes to send")
 	flag.DurationVar(&config.interval, "i", time.Second, "seconds between sending each packet")
+	flag.DurationVar(&config.timeout, "W", 3*time.Second, "Per-packet response timeout")
+	flag.DurationVar(&config.deadLine, "w", time.Minute, "Exit after this duration")
 
 	// flag.IntVar(&config.interval, "i", timetime.Second, "seconds between sending each packet")
 	var usages string = `Usage
@@ -32,16 +34,15 @@ func main() {
 
 Options:
   <destination>      DNS name or IP address
-  -c <count>         stop after <count> replies
-  -d                 use SO_DEBUG socket option
-  -f                 flood ping
-  -i <interval>      seconds between sending each packet
-  -s <size>          use <size> as number of data bytes to be sent
-  -t <ttl>           define time to live
-  -w <deadline>      reply wait <deadline> in seconds
-  -W <timeout>       time to wait for response
-
-  -6                 use IPv6
+  -c <count>         Stop after <count> replies
+  -f                 Flood ping
+  -W <timeout>       Time to wait for response
+  -i <interval>      Seconds between sending each packet
+  -s <size>          Use <size> as number of data bytes to be sent
+  -t <ttl>           Define time to live
+  -w <deadline>   	 Exit after this duration (e.g. 10s, 1m)  
+  -6                 Use IPv6
+  -H                 Show ASCII latency histogram after summary
 `
 	flag.Usage = func() { fmt.Print(usages) }
 	flag.Parse()
