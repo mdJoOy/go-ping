@@ -65,10 +65,14 @@ func ping(ip net.IP, cf *Config) {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
+	deadLineCh := make(<-chan time.Time)
+	deadLineCh = time.After(cf.deadLine)
+
 	done := make(chan struct{})
 	go func() {
 		select {
 		case <-sigCh:
+		case <-deadLineCh:
 		case <-done:
 			return
 		}
@@ -138,11 +142,6 @@ func ping(ip net.IP, cf *Config) {
 			break
 		}
 
-		if time.Since(timeNow) == cf.deadLine {
-			fmt.Fprintf(os.Stderr, "Dead-Line crossed")
-			printStats(*stat, *cf)
-			os.Exit(1)
-		}
 	}
 	stat.loss = float64((stat.sent - stat.received) / stat.sent * 100)
 	printStats(*stat, *cf)
