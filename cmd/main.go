@@ -14,6 +14,10 @@ const (
 )
 
 func main() {
+	if uid := os.Getuid(); uid != 0 {
+		fmt.Println("use SUDO: ping/icmp uses raw socket, which requires super user permission")
+		os.Exit(1)
+	}
 	config := &Config{}
 
 	flag.IntVar(&config.count, "c", 0, "stop after <count> replies")
