@@ -28,7 +28,6 @@ func (s *Stats) avg() {
 
 // adding
 func (s *Stats) add(rtt float64) {
-	s.sent++
 	s.received++
 	s.rtts = append(s.rtts, rtt)
 

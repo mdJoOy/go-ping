@@ -101,6 +101,7 @@ func ping(ip net.IP, cf *Config) {
 			time.Sleep(cf.interval)
 			continue
 		}
+		stat.sent++
 		//reading the request
 		c.SetReadDeadline(time.Now().Add(cf.timeout))
 		rb := make([]byte, 1500)
