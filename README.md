@@ -11,9 +11,10 @@
 ## Build
 
 ```bash
-cd ping/
+cd go-ping/
 go mod tidy
-go build -o goping .
+chmod a+x build.sh
+./build.sh
 ```
 
 ## Usage
