@@ -16,6 +16,10 @@ go mod tidy
 chmod a+x build.sh
 ./build.sh
 ```
+```
+The executeable or bin file will be generated in the build folder
+cd in build and then run the binary
+```
 
 ## Usage
 
