@@ -39,7 +39,7 @@ func resolveHostIP(host string, v6 bool) (net.IP, error) {
 // rtt min/avg/max/mdev = 4.120/10.022/31.023/7.191 ms
 func printStats(s Stats, c Config) {
 	fmt.Printf("\n--- %s ping statistics ---\n", c.destination)
-	fmt.Printf("%d packets transmitted, %d received, %.2f%% packet loss, time ms\n", s.sent, s.received, s.loss)
+	fmt.Printf("%d packets transmitted, %d received, %.2f%% packet loss, time ms\n", s.sent, s.received, s.loss())
 	fmt.Printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n", s.minRtt, s.maxRtt, s.avgRtt, s.stdDev())
 }
 

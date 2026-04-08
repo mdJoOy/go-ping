@@ -144,7 +144,6 @@ func ping(ip net.IP, cf *Config) {
 		}
 
 	}
-	stat.loss = float64((stat.sent - stat.received) / stat.sent * 100)
 	printStats(*stat, *cf)
 	if cf.histogram {
 		stat.histogram()

@@ -13,7 +13,6 @@ type Stats struct {
 	maxRtt    float64
 	minRtt    float64
 	avgRtt    float64
-	loss      float64
 	startTime time.Time
 }
 
@@ -49,6 +48,9 @@ func (s *Stats) stdDev() float64 {
 		variance += diff * diff
 	}
 	return math.Sqrt(variance / float64(s.received))
+}
+func (s *Stats) loss() float64 {
+	return float64(s.sent-s.received) / float64(s.sent) * 100
 }
 
 func (s *Stats) histogram() {
