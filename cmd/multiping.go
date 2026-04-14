@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"log"
 	"net"
@@ -61,12 +62,11 @@ func sender(c icmp.PacketConn, t *Target, cfg Config) {
 	defer ticker.Stop()
 	seq := 0
 	for range ticker.C {
-		//trying to include the startTime in the paylaod
-		startTime := time.Now().UnixNano()
-		timeBytes := make([]byte, 8)
 
-		echoReqBody := icmp.Echo{ID: t.id, Seq: seq, Data: makePayload(cfg.size)}
-		echoMessage := icmp.Message{Type: ipv4.ICMPTypeEcho, Code: 0, Body: &echoReqBody}
+		echoMessage := icmp.Message{Type: ipv4.ICMPTypeEcho,
+			Code: 0,
+			Body: &icmp.Echo{ID: t.id, Seq: seq, Data: makePayload(cfg.size)},
+		}
 		rawMessage, err := echoMessage.Marshal(nil)
 		if err != nil {
 			log.Fatal(err)
@@ -95,7 +95,11 @@ func reader(c icmp.PacketConn, out chan<- Reply) {
 		}
 		if parseReply.Type == ipv4.ICMPTypeEchoReply {
 			icmpEchoReplyBody := parseReply.Body.(*icmp.Echo)
-			out <- Reply{from: net.IP(peer.String()), id: icmpEchoReplyBody.ID, seq: icmpEchoReplyBody.Seq}
+			//
+			returnedPayload := icmpEchoReplyBody.Data
+			sentTimeNano := int64(binary.BigEndian.Uint64(returnedPayload[:8]))
+			rtt := time.Since(time.Unix(0, sentTimeNano))
+			out <- Reply{from: net.IP(peer.String()), id: icmpEchoReplyBody.ID, seq: icmpEchoReplyBody.Seq, rtt: rtt.Seconds() * 1000}
 		}
 
 	}
@@ -105,7 +109,7 @@ func display(replies chan Reply, targets []*Target) {
 	for reply := range replies {
 		for _, t := range targets {
 			if t.id == reply.id {
-				fmt.Printf("received reply from %s, seq=%d, id=%d\n", t.host, reply.seq, reply.id)
+				fmt.Printf("received reply from %s, seq=%d, id=%d, rtt=%vms\n", t.host, reply.seq, reply.id, reply.rtt)
 			}
 		}
 

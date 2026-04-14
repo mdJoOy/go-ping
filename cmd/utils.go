@@ -1,15 +1,23 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net"
 	"os"
+	"time"
 )
 
 // echo payload creator functin
 func makePayload(size int) []byte {
 	b := make([]byte, size)
-	for i := range b {
+
+	//trying to include the startTime in the paylaod
+	startTime := time.Now().UnixNano()
+
+	binary.BigEndian.PutUint64(b[:8], uint64(startTime))
+
+	for i := 8; i < size; i++ {
 		b[i] = byte(i & 0xff)
 	}
 	return b
