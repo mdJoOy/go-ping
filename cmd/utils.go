@@ -16,7 +16,7 @@ func makePayload(size int) []byte {
 }
 
 // host resolver func
-func resolveHostIP(host string, v6 bool) (net.IP, error) {
+func resolveHostIP(host string, v6 bool) net.IP {
 	addrs, err := net.LookupHost(host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "couldnot resolve host: %v\n", err)
@@ -24,13 +24,13 @@ func resolveHostIP(host string, v6 bool) (net.IP, error) {
 	for _, addr := range addrs {
 		ipAddr := net.ParseIP(addr)
 		if ipAddr.To4() != nil && !v6 {
-			return ipAddr, nil
+			return ipAddr
 		} else if ipAddr.To4() == nil && v6 {
-			return ipAddr, nil
+			return ipAddr
 		}
 
 	}
-	return net.ParseIP(addrs[0]), nil
+	return net.ParseIP(addrs[0])
 }
 
 // print stats func

@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -54,25 +53,31 @@ Options:
   -m				 Write hosts inside double quot("")but seperate them by (,)
 `
 	flag.Usage = func() { fmt.Print(usages) }
+
 	flag.Parse()
-	if flag.NArg() < 1 {
-		fmt.Print(usages)
-		os.Exit(1)
-	}
-
-	config.destination = flag.Arg(0)
-
-	ip, err := resolveHostIP(config.destination, config.ipv6)
-	if err != nil {
-		log.Fatal("couldnot resolve ip address")
-	}
-	//
 	hosts := strings.Split(hostsString, ",")
 	for i, v := range hosts {
 		hosts[i] = strings.TrimSpace(v)
 	}
 	fmt.Println(hosts)
 	//
-	ping(ip, config)
+	if len(hosts) > 1 {
+		pingMultiple(*config, hosts)
+		time.Sleep(2 * time.Minute)
+	} else {
+
+		if flag.NArg() < 1 {
+			fmt.Print(usages)
+			os.Exit(1)
+		}
+
+		config.destination = flag.Arg(0)
+
+		ip := resolveHostIP(config.destination, config.ipv6)
+		// if err != nil {
+		// 	log.Fatal("couldnot resolve ip address")
+		// }
+		ping(ip, config)
+	}
 
 }
