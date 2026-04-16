@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"time"
@@ -10,6 +11,9 @@ import (
 
 // echo payload creator functin
 func makePayload(size int) []byte {
+	if size < 8 {
+		log.Fatal("payload size must be >= 8 or else we can't put the timeStamp in the payload")
+	}
 	b := make([]byte, size)
 
 	//trying to include the startTime in the paylaod

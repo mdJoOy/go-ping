@@ -52,6 +52,7 @@ func pingMultiple(cfg Config, hosts []string) error {
 
 	rawReplies := make(chan Reply, 50)
 	go reader(*conn, rawReplies)
+	go dispatcher(rawReplies, targets)
 	go display(rawReplies, targets)
 
 	return nil
@@ -60,9 +61,9 @@ func pingMultiple(cfg Config, hosts []string) error {
 func sender(c icmp.PacketConn, t *Target, cfg Config) {
 	ticker := time.NewTicker(cfg.interval)
 	defer ticker.Stop()
+
 	seq := 0
 	for range ticker.C {
-
 		echoMessage := icmp.Message{Type: ipv4.ICMPTypeEcho,
 			Code: 0,
 			Body: &icmp.Echo{ID: t.id, Seq: seq, Data: makePayload(cfg.size)},
@@ -89,6 +90,10 @@ func reader(c icmp.PacketConn, out chan<- Reply) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		ipAddr, ok := peer.(*net.IPAddr)
+		if !ok {
+			fmt.Errorf("couldn't convert the peer to ip address")
+		}
 		parseReply, err := icmp.ParseMessage(ICMPProtocol, buf[:n])
 		if err != nil {
 			log.Fatal(err)
@@ -99,17 +104,33 @@ func reader(c icmp.PacketConn, out chan<- Reply) {
 			returnedPayload := icmpEchoReplyBody.Data
 			sentTimeNano := int64(binary.BigEndian.Uint64(returnedPayload[:8]))
 			rtt := time.Since(time.Unix(0, sentTimeNano))
-			out <- Reply{from: net.IP(peer.String()), id: icmpEchoReplyBody.ID, seq: icmpEchoReplyBody.Seq, rtt: rtt.Seconds() * 1000}
+			out <- Reply{from: ipAddr.IP, id: icmpEchoReplyBody.ID, seq: icmpEchoReplyBody.Seq, rtt: rtt.Seconds() * 1000}
 		}
 
 	}
 }
 
+func dispatcher(in <-chan Reply, targets []*Target) {
+	byID := make(map[int]*Target)
+
+	for _, t := range targets {
+		byID[t.id] = t
+	}
+
+	for reply := range in {
+		if t, ok := byID[reply.id]; ok {
+			t.replies <- reply
+		} else {
+			continue
+		}
+	}
+
+}
 func display(replies chan Reply, targets []*Target) {
 	for reply := range replies {
 		for _, t := range targets {
 			if t.id == reply.id {
-				fmt.Printf("received reply from %s, seq=%d, id=%d, rtt=%vms\n", t.host, reply.seq, reply.id, reply.rtt)
+				fmt.Printf("received reply from %s, seq=%d, id=%d, rtt=%vms\n", reply.from, reply.seq, reply.id, reply.rtt)
 			}
 		}
 
