@@ -1,22 +1,34 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
+	"log"
 	"net"
 	"os"
+	"time"
 )
 
 // echo payload creator functin
 func makePayload(size int) []byte {
+	if size < 8 {
+		log.Fatal("payload size must be >= 8 or else we can't put the timeStamp in the payload")
+	}
 	b := make([]byte, size)
-	for i := range b {
+
+	//trying to include the startTime in the paylaod
+	startTime := time.Now().UnixNano()
+
+	binary.BigEndian.PutUint64(b[:8], uint64(startTime))
+
+	for i := 8; i < size; i++ {
 		b[i] = byte(i & 0xff)
 	}
 	return b
 }
 
 // host resolver func
-func resolveHostIP(host string, v6 bool) (net.IP, error) {
+func resolveHostIP(host string, v6 bool) net.IP {
 	addrs, err := net.LookupHost(host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "couldnot resolve host: %v\n", err)
@@ -24,13 +36,13 @@ func resolveHostIP(host string, v6 bool) (net.IP, error) {
 	for _, addr := range addrs {
 		ipAddr := net.ParseIP(addr)
 		if ipAddr.To4() != nil && !v6 {
-			return ipAddr, nil
+			return ipAddr
 		} else if ipAddr.To4() == nil && v6 {
-			return ipAddr, nil
+			return ipAddr
 		}
 
 	}
-	return net.ParseIP(addrs[0]), nil
+	return net.ParseIP(addrs[0])
 }
 
 // print stats func

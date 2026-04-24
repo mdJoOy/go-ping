@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -31,6 +31,9 @@ func main() {
 	flag.DurationVar(&config.interval, "i", time.Second, "seconds between sending each packet")
 	flag.DurationVar(&config.timeout, "W", 3*time.Second, "Per-packet response timeout")
 	flag.DurationVar(&config.deadLine, "w", time.Minute, "Exit after this duration")
+	//multi ping
+	var hostsString string
+	flag.StringVar(&hostsString, "m", " ", "Write hosts inside double quot but seperate them by (,)")
 
 	// flag.IntVar(&config.interval, "i", timetime.Second, "seconds between sending each packet")
 	var usages string = `Usage
@@ -47,20 +50,34 @@ Options:
   -w <deadline>   	 Exit after this duration (e.g. 10s, 1m)  
   -6                 Use IPv6
   -H                 Show ASCII latency histogram after summary
+  -m				 Write hosts inside double quot("")but seperate them by (,)
 `
 	flag.Usage = func() { fmt.Print(usages) }
+
 	flag.Parse()
-	if flag.NArg() < 1 {
-		fmt.Print(usages)
-		os.Exit(1)
+	hosts := strings.Split(hostsString, ",")
+	for i, v := range hosts {
+		hosts[i] = strings.TrimSpace(v)
+	}
+	fmt.Println(hosts)
+	//
+	if len(hosts) > 1 {
+		pingMultiple(*config, hosts)
+		time.Sleep(2 * time.Minute)
+	} else {
+
+		if flag.NArg() < 1 {
+			fmt.Print(usages)
+			os.Exit(1)
+		}
+
+		config.destination = flag.Arg(0)
+
+		ip := resolveHostIP(config.destination, config.ipv6)
+		// if err != nil {
+		// 	log.Fatal("couldnot resolve ip address")
+		// }
+		ping(ip, config)
 	}
 
-	config.destination = flag.Arg(0)
-
-	ip, err := resolveHostIP(config.destination, config.ipv6)
-	if err != nil {
-		log.Fatal("couldnot resolve ip address")
-	}
-
-	ping(ip, config)
 }
